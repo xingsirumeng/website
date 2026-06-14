@@ -1,0 +1,33 @@
+# ============================================================
+# Docker Compose — 一键启动前后端
+#   使用: docker compose up -d --build
+# ============================================================
+version: "3.8"
+
+services:
+  # ---- Python 后端 ----
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: fullstack-backend
+    restart: always
+    environment:
+      - DATABASE_URL=sqlite:///./app.db
+      - SECRET_KEY=change-me-in-production
+    # 端口只绑 127.0.0.1，由 Nginx 反代，不直接暴露
+    # 如果不用 frontend 容器的 Nginx，可以改成 "8000:8000"
+    expose:
+      - "8000"
+
+  # ---- Vue 前端 + Nginx ----
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: fullstack-frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend

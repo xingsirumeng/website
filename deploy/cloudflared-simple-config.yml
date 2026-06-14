@@ -1,0 +1,23 @@
+# ============================================================
+# Cloudflare Tunnel 简化版 — 不需要域名！
+# cloudflared 会自动分配一个 xxx.cfargotunnel.com 子域名
+# ============================================================
+# 在终端直接运行:
+#   cloudflared tunnel --url http://localhost:5173
+#
+# 或写成配置:
+#   cloudflared tunnel --config deploy/cloudflared-simple-config.yml run
+# ============================================================
+tunnel: fullstack-app-quick
+credentials-file: C:\Users\xingsirumeng\.cloudflared\fullstack-app-quick.json
+
+ingress:
+  # 前端开发服务器
+  - hostname: fullstack-app.cfargotunnel.com
+    service: http://localhost:5173
+
+  # 后端 API
+  - hostname: fullstack-app-api.cfargotunnel.com
+    service: http://localhost:8000
+
+  - service: http_status:404

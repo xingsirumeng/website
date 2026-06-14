@@ -1,0 +1,52 @@
+# ============================================================
+# Docker Compose (HTTPS 版) — 使用 Caddy 自动获取 SSL 证书
+# ============================================================
+# 部署前要做:
+#   1. 域名 DNS 指向服务器 IP
+#   2. 改下面的 DOMAIN 为你的域名
+#
+# 启动:
+#   docker compose -f docker-compose.https.yml up -d --build
+#
+# Caddy 会自动:
+#   - 从 Let's Encrypt 申请免费 SSL 证书
+#   - 到期前自动续期
+#   - HTTP → HTTPS 自动跳转
+# ============================================================
+version: "3.8"
+
+services:
+  # ---- Python 后端 ----
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: fullstack-backend
+    restart: always
+    environment:
+      - DATABASE_URL=sqlite:///./app.db
+      - SECRET_KEY=change-me-in-production
+    expose:
+      - "8000"
+
+  # ---- Vue 前端 + Caddy (自动 HTTPS) ----
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.caddy
+    container_name: fullstack-frontend
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - DOMAIN=your-domain.com          # ← 改这里！！！
+    volumes:
+      - caddy_data:/data                # 证书持久化存储
+      - caddy_config:/config
+    depends_on:
+      - backend
+
+volumes:
+  caddy_data:
+  caddy_config:

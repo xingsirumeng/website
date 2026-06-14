@@ -1,0 +1,33 @@
+# ============================================================
+# 最简部署 — 不需要域名，不需要任何配置
+# ============================================================
+# 服务器上只需要一条命令:
+#   docker compose -f docker-compose.simple.yml up -d --build
+# ============================================================
+
+services:
+  # ---- Python 后端 ----
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: always
+
+  # ---- Caddy（前端 + 自动 HTTPS） ----
+  caddy:
+    image: caddy:alpine
+    container_name: fullstack-caddy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./frontend/dist:/usr/share/caddy:ro
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+    depends_on:
+      - backend
+    command: caddy run --config /etc/caddy/Caddyfile
+
+volumes:
+  caddy_data:

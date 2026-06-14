@@ -1,0 +1,27 @@
+# ============================================================
+# Cloudflare Tunnel 配置
+# 使用方式: cloudflared tunnel run fullstack-app
+# ============================================================
+# 这个文件告诉 cloudflared:
+#   - 哪些域名走这个隧道
+#   - 流量转发到后端的哪个端口
+# ============================================================
+
+tunnel: fullstack-app                     # 隧道名称（创建后填入 ID）
+credentials-file: /root/.cloudflared/fullstack-app.json   # 凭据文件路径
+
+ingress:
+  # API 请求转发到后端
+  - hostname: app.your-domain.com         # ← 改成你的（或 cfargotunnel.com 免费域）
+    service: http://backend:8000
+
+  # 前端静态文件由 Nginx 容器提供
+  - hostname: app.your-domain.com
+    path: /api/*
+    service: http://backend:8000
+
+  # 其他所有请求走前端
+  - service: http://frontend:80
+
+  # 安全策略: 拒绝未匹配的请求（必须保留）
+  - service: http_status:404
