@@ -8,7 +8,6 @@
 #   3. cloudflared tunnel create fullstack-app     # 创建隧道（得到 ID）
 #   4. 把生成的 .json 文件放到当前目录，改下面映射路径
 # ============================================================
-version: "3.8"
 
 services:
   backend:

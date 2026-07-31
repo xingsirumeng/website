@@ -2,7 +2,6 @@
 # Docker Compose — 一键启动前后端
 #   使用: docker compose up -d --build
 # ============================================================
-version: "3.8"
 
 services:
   # ---- Python 后端 ----

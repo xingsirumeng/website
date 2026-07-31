@@ -8,7 +8,6 @@
 #   4. docker exec certbot certbot --nginx -d your-domain.com
 #   5. 取消第 2 步的注释，重新启动
 # ============================================================
-version: "3.8"
 
 services:
   backend:

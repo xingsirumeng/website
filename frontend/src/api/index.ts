@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 const api = axios.create({
-  baseURL: '/',           // Vite 代理转发到后端
+  baseURL: 'http://139.196.32.236:8000',
   timeout: 10000,
 })
 

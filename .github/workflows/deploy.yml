@@ -29,14 +29,23 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 步骤2：部署到 gh-pages 分支
+      # 步骤2：安装 Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # 步骤3：构建前端
+      - name: Build frontend
+        run: |
+          cd frontend
+          npm ci
+          npm run build
+
+      # 步骤4：部署到 gh-pages 分支
       - name: Deploy to GitHub Pages
-        # 使用第三方大神写好的 Action
         uses: peaceiris/actions-gh-pages@v4
         with:
-          # 使用 GitHub 自动生成的 Token 进行身份验证
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          # 指定要部署的文件夹，这里就是你的 frontend 文件夹
-          publish_dir: ./frontend
-          # 指定部署到哪个分支，默认就是 gh-pages
-          # publish_branch: gh-pages  # 这一行可以省略
+          # 部署构建产物，不是源码
+          publish_dir: ./frontend/dist

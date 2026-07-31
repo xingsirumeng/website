@@ -4,6 +4,7 @@ import { fileURLToPath, URL } from 'node:url'
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: './',   // 相对路径，适配 GitHub Pages 子目录
   plugins: [vue()],
   resolve: {
     alias: {
