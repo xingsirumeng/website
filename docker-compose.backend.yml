@@ -1,0 +1,34 @@
+# ============================================================
+# 仅后端 + Caddy HTTPS（配合 GitHub Pages 前端使用）
+# 启动: docker compose -f docker-compose.backend.yml up -d --build
+# Caddy 自动申请 Let's Encrypt 证书，后端通过 HTTPS 访问
+# ============================================================
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      - DATABASE_URL=sqlite:///./app.db
+    expose:
+      - "8000"
+    volumes:
+      - backend_data:/app/data
+
+  caddy:
+    image: caddy:alpine
+    container_name: backend-caddy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile.backend:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+    depends_on:
+      - backend
+
+volumes:
+  caddy_data:
+  backend_data:
