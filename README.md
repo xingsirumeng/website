@@ -80,6 +80,28 @@ npm run dev        # http://localhost:5173
 
 浏览器打开 http://localhost:5173/#/admin ，输入 `ADMIN_PASSWORD` 登录即可写作。
 
+### 4. 配图
+
+图片存在服务器上，由后端当静态文件提供，不占仓库。
+
+- 服务器目录：`~/website/image/`
+- 本地开发目录：`backend/images/`（首次启动自动创建）
+- 访问地址：`https://139.196.32.236.nip.io/images/文件名`
+
+Markdown 里写完整 URL：
+
+```markdown
+![](https://139.196.32.236.nip.io/images/sample1.jpg)
+```
+
+上传图片（在本地执行，不是服务器上）：
+
+```bash
+scp sample1.jpg root@139.196.32.236:~/website/image/
+```
+
+> 文件名建议只用英文、数字和连字符，避免 URL 需要百分号编码。
+
 ## 生产部署
 
 ### 架构

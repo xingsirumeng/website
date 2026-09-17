@@ -13,6 +13,8 @@ services:
       # 必须用绝对路径（4 个斜杠），才能落到下面挂载的 volume 上。
       # 用相对路径 sqlite:///./app.db 会写进容器可写层，容器一重建文章全丢。
       - DATABASE_URL=sqlite:////app/data/app.db
+      # 博客配图在容器内的路径，和下面的挂载、以及 URL 前缀 /images 对应
+      - IMAGES_DIR=/app/images
       # 仅用于容器日志的时间戳。文章日期由后端代码按东八区计算（见 app/models.py），
       # 不依赖这个变量，因为 slim 镜像不保证装了 tzdata
       - TZ=Asia/Shanghai
@@ -23,6 +25,10 @@ services:
       - "8000"
     volumes:
       - backend_data:/app/data
+      # 博客配图：宿主机的 image/ 目录只读挂进容器。
+      # 放进去的文件可直接通过 https://139.196.32.236.nip.io/images/文件名 访问。
+      # 目录不存在时 Docker 会自动创建（属主 root），首次部署后 scp 图片进去即可。
+      - ./image:/app/images:ro
 
   caddy:
     image: caddy:alpine

@@ -19,3 +19,7 @@ SECRET_KEY = os.getenv("SECRET_KEY", "") or ADMIN_PASSWORD
 
 # 登录令牌有效期（小时）
 TOKEN_EXPIRE_HOURS = 12
+
+# 博客配图的存放目录。
+# 本地开发默认 backend/images/；容器里由 compose 注入 /app/images（挂载宿主机的 image/ 目录）
+IMAGES_DIR = os.getenv("IMAGES_DIR", "./images")

@@ -11,6 +11,9 @@ venv/
 *.db-wal
 *.db-shm
 
+# 博客配图（本地开发用，生产环境放在服务器上）
+backend/images/
+
 # Node
 node_modules/
 dist/
