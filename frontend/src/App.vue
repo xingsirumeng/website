@@ -1,11 +1,9 @@
-<script setup lang="ts">
-</script>
-
 <template>
   <div id="app">
     <nav class="navbar">
       <router-link to="/">🏠 首页</router-link>
-      <router-link to="/items">📦 物品</router-link>
+      <router-link to="/tags">🏷️ 标签</router-link>
+      <router-link to="/archive">📅 归档</router-link>
     </nav>
     <main>
       <router-view />

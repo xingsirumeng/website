@@ -33,7 +33,9 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          # Vite 8 / @vitejs/plugin-vue 6 要求 Node ^20.19.0 || >=22.12.0，
+          # 且 Node 20 已于 2026-04 停止维护
+          node-version: '22'
 
       # 步骤3：构建前端
       - name: Build frontend

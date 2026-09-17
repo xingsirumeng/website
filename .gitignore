@@ -5,6 +5,12 @@ __pycache__/
 venv/
 .env
 
+# SQLite 数据库（本地开发的 app.db 不该进仓库，生产数据在服务器 volume 里）
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
 # Node
 node_modules/
 dist/

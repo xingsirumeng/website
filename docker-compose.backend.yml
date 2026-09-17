@@ -10,7 +10,15 @@ services:
       dockerfile: Dockerfile
     restart: always
     environment:
-      - DATABASE_URL=sqlite:///./app.db
+      # 必须用绝对路径（4 个斜杠），才能落到下面挂载的 volume 上。
+      # 用相对路径 sqlite:///./app.db 会写进容器可写层，容器一重建文章全丢。
+      - DATABASE_URL=sqlite:////app/data/app.db
+      # 仅用于容器日志的时间戳。文章日期由后端代码按东八区计算（见 app/models.py），
+      # 不依赖这个变量，因为 slim 镜像不保证装了 tzdata
+      - TZ=Asia/Shanghai
+    # backend/.env 被 .dockerignore 排除（不进镜像），密钥在这里注入
+    env_file:
+      - ./backend/.env
     expose:
       - "8000"
     volumes:
