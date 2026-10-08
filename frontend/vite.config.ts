@@ -18,6 +18,11 @@ export default defineConfig({
         target: 'http://localhost:8000',
         changeOrigin: true,
       },
+      // 正文里的图片用相对地址 /images/xxx，本地开发要靠这条代理打到本地后端
+      '/images': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
     },
   },
 })

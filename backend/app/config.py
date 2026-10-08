@@ -20,6 +20,7 @@ SECRET_KEY = os.getenv("SECRET_KEY", "") or ADMIN_PASSWORD
 # 登录令牌有效期（小时）
 TOKEN_EXPIRE_HOURS = 12
 
-# 博客配图的存放目录。
-# 本地开发默认 backend/images/；容器里由 compose 注入 /app/images（挂载宿主机的 image/ 目录）
+# 历史图片目录。图片现在存在数据库里了，这个目录只在启动时被扫一遍，
+# 用来把早期存成文件的老图片导入库（见 routes/images.py 的 import_legacy_images）。
+# 导入确认无误后，这个配置和 docker-compose 里对应的挂载都可以删掉。
 IMAGES_DIR = os.getenv("IMAGES_DIR", "./images")

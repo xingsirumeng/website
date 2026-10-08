@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Vditor 自托管资源，由 scripts/copy-vditor.mjs 从 node_modules 生成，不进仓库
+public/vditor
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

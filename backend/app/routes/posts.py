@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
 from app.auth import create_token, verify_password
@@ -85,6 +85,39 @@ def get_post(post_id: int, db: Session = Depends(get_db)):
     if not post:
         raise HTTPException(status_code=404, detail="文章不存在")
     return post
+
+
+@router.get("/search", response_model=list[PostResponse])
+def search_posts(q: str = "", db: Session = Depends(get_db)):
+    """搜索已发布文章（标题 / 摘要 / 正文）
+
+    中文用 LIKE 子串匹配就够 —— 中文没有词边界问题，不像英文需要分词。
+    等文章量大到 LIKE 撑不住了再考虑 SQLite 的 FTS5。
+    """
+    keyword = q.strip()
+    if not keyword:
+        return []
+
+    # 转义 LIKE 的通配符。不转的话搜一个 "%" 会命中全部文章，搜 "_" 会匹配任意单字
+    escaped = (
+        keyword.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    )
+    pattern = f"%{escaped}%"
+
+    return (
+        db.query(Post)
+        .filter(
+            Post.published.is_(True),
+            or_(
+                Post.title.like(pattern, escape="\\"),
+                Post.summary.like(pattern, escape="\\"),
+                Post.content.like(pattern, escape="\\"),
+            ),
+        )
+        .order_by(Post.created_at.desc(), Post.id.desc())
+        .limit(50)
+        .all()
+    )
 
 
 @router.get("/tags", response_model=list[TagResponse])

@@ -11,8 +11,18 @@ class PostCreate(BaseModel):
     published: bool = False
 
 
-class PostUpdate(PostCreate):
-    pass
+class PostUpdate(BaseModel):
+    """更新文章的入参。
+
+    title 和 content 故意不给默认值：PUT 是全量替换，客户端漏传正文时应该被 422 拦下，
+    而不是走默认值 "" 把文章正文静默清空 —— 那是一个不可逆的数据丢失。
+    """
+
+    title: str
+    content: str
+    summary: str = ""
+    tags: list[str] = []
+    published: bool = False
 
 
 class PostResponse(BaseModel):

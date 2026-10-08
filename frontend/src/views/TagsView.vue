@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { SyncOutline, PricetagOutline } from '@vicons/ionicons5'
 import api from '@/api'
 import { formatDate } from '@/utils/format'
 import type { PostSummary, TagCount } from '@/types'
@@ -46,9 +47,15 @@ watch(() => route.query.tag, load)
 
 <template>
   <div class="tags-page">
-    <h1>🏷️ 标签</h1>
+    <h1>
+      <PricetagOutline class="svg-icon" />
+      标签
+    </h1>
 
-    <div v-if="loading">⏳ 加载中...</div>
+    <div v-if="loading" class="loading">
+      <SyncOutline class="svg-icon spin" />
+      加载中...
+    </div>
     <div v-else-if="error" class="error">{{ error }}</div>
 
     <template v-else>
@@ -82,17 +89,20 @@ watch(() => route.query.tag, load)
 
 <style scoped>
 .tags-page {
-  padding: 20px 0;
+  padding: 28px 0 64px;
 }
 h1 {
-  font-size: 1.6rem;
-  margin: 0 0 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.5rem;
+  margin: 0 0 24px;
 }
 h2 {
   font-size: 1.05rem;
   font-weight: normal;
-  color: #666;
-  margin: 28px 0 12px;
+  color: var(--text-muted);
+  margin: 32px 0 14px;
 }
 .tag-cloud {
   display: flex;
@@ -102,20 +112,20 @@ h2 {
 .tag {
   font: inherit;
   font-size: 0.9rem;
-  background: #fff;
-  color: #333;
-  border: 1px solid #e5e4e7;
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--border);
   border-radius: 20px;
   padding: 4px 14px;
   cursor: pointer;
   transition: background 0.2s, border-color 0.2s, color 0.2s;
 }
 .tag:hover {
-  border-color: #42b883;
+  border-color: var(--brand);
 }
 .tag.active {
-  background: #42b883;
-  border-color: #42b883;
+  background: var(--brand);
+  border-color: var(--brand);
   color: #fff;
 }
 .count {
@@ -132,8 +142,8 @@ h2 {
   justify-content: space-between;
   align-items: baseline;
   gap: 16px;
-  padding: 10px 0;
-  border-bottom: 1px solid #eee;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--border);
 }
 .post-list a {
   text-decoration: none;
@@ -142,11 +152,11 @@ h2 {
   text-decoration: underline;
 }
 .date {
-  color: #999;
+  color: var(--text-muted);
   font-size: 0.85rem;
   white-space: nowrap;
 }
 .error {
-  color: #e74c3c;
+  color: var(--danger);
 }
 </style>

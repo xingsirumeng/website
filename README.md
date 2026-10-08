@@ -80,27 +80,25 @@ npm run dev        # http://localhost:5173
 
 浏览器打开 http://localhost:5173/#/admin ，输入 `ADMIN_PASSWORD` 登录即可写作。
 
+正文用 Vditor 可视化编辑器（即时渲染，像 Typora）。右上角可切到「纯文本」模式直接改 Markdown 源码，两边内容实时同步。工具栏里可以插入标题、列表、代码块、表格、链接和图片。
+
 ### 4. 配图
 
-图片存在服务器上，由后端当静态文件提供，不占仓库。
+**直接粘贴或拖拽图片进编辑器即可**，会自动上传并插入链接，不用手动传文件。
 
-- 服务器目录：`~/website/image/`
-- 本地开发目录：`backend/images/`（首次启动自动创建）
-- 访问地址：`https://139.196.32.236.nip.io/images/文件名`
+图片**存在数据库里**，所以：
 
-Markdown 里写完整 URL：
+- 备份 = 复制 `app.db` 一个文件，图片也在里面，不用单独备份图片目录
+- 正文里存的是**相对地址** `/images/xxx.png`，由前端按当前环境补全成绝对地址
+- 本地开发上传的图**本地立刻就能看到**，不用先传到服务器
 
-```markdown
-![](https://139.196.32.236.nip.io/images/sample1.jpg)
-```
+限制：单张最大 5MB，只支持 JPG / PNG / GIF / WebP（按文件头校验，改扩展名无效）。
 
-上传图片（在本地执行，不是服务器上）：
+> **一个绕不开的限制**：本地和线上是两套独立数据库。本地写的文章发布时，图片需要**在线上后台重新上传一次**。想完全避开就在线上后台写。
+>
+> 早期的图片是存文件的（`~/website/image/`）。后端启动时会自动把它们导入数据库（日志会打印「已导入历史图片 xxx」），导入幂等、不会重复。确认无误后 `image/` 目录和 compose 里对应的挂载都可以删掉。
 
-```bash
-scp sample1.jpg root@139.196.32.236:~/website/image/
-```
-
-> 文件名建议只用英文、数字和连字符，避免 URL 需要百分号编码。
+> 编辑器资源是**自托管**的（`frontend/scripts/copy-vditor.mjs` 在 `npm run dev` / `npm run build` 前自动从 `node_modules` 拷贝到 `public/vditor`，已 gitignore）。这是必须的：Vditor 默认从 unpkg 加载 Markdown 解析内核，国内访问不稳定，拉不到会直接白屏。
 
 ## 生产部署
 
@@ -159,8 +157,9 @@ Caddy 自动申请 Let's Encrypt 证书，后端通过 HTTPS 暴露。**记得�
 | GET | `/api/admin/posts` | 全部文章，含草稿 |
 | GET | `/api/admin/posts/{id}` | 单篇（草稿也能读） |
 | POST | `/api/admin/posts` | 新建 |
-| PUT | `/api/admin/posts/{id}` | 更新（全量） |
+| PUT | `/api/admin/posts/{id}` | 更新（全量，`title` 和 `content` 必填） |
 | DELETE | `/api/admin/posts/{id}` | 删除 |
+| POST | `/api/admin/upload` | 上传配图（multipart，字段名 `file`），返回 `{url}`，`url` 是相对地址 |
 
 ```bash
 # 发布文章的完整流程
@@ -183,6 +182,7 @@ curl -X POST https://139.196.32.236.nip.io/api/admin/posts \
 | `DATABASE_URL` | 数据库路径。本地 `sqlite:///./app.db`；容器里由 compose 注入绝对路径 | `sqlite:///./app.db` |
 | `SECRET_KEY` | 登录令牌的签名密钥。留空则退化为用 `ADMIN_PASSWORD` 签名 | 回退到 `ADMIN_PASSWORD` |
 | `ADMIN_PASSWORD` | 后台 `/admin` 的登录密码 | **无默认值** |
+| `IMAGES_DIR` | 历史图片目录，仅用于启动时把老图片导入数据库 | `./images` |
 
 > `ADMIN_PASSWORD` 未配置时后台会拒绝一切登录并返回 503 —— 这是故意的，避免部署时漏配导致后台用一个弱默认密码敞着。
 

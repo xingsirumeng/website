@@ -1,20 +1,20 @@
-import os
 from contextlib import asynccontextmanager
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 
 from app.auth import require_admin
-from app.config import IMAGES_DIR
 from app.database import engine, Base
-from app.routes import posts
+from app.routes import images, posts
+from app.routes.images import import_legacy_images
 
 
 # 启动时自动建表（表不存在才创建，已有数据不会丢）
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
+    # 把早期存成文件的老图片导进数据库（可重复执行，导入过的不再重复导）
+    import_legacy_images()
     yield
 
 
@@ -37,13 +37,27 @@ app.include_router(
     posts.admin_router, prefix="/api/admin", dependencies=[Depends(require_admin)]
 )
 
-# 博客配图。Caddy 会把非 /api 的路径也转发过来，所以图片地址是
-# https://139.196.32.236.nip.io/images/文件名
-#
-# 目录必须先建出来：StaticFiles 在目录不存在时不是干脆地返回 404，
-# 而是抛 RuntimeError 变成 500（首次请求时检查一次）。顺带让本地开发不用手动 mkdir。
-os.makedirs(IMAGES_DIR, exist_ok=True)
-app.mount("/images", StaticFiles(directory=IMAGES_DIR), name="images")
+# 博客配图存在数据库里。路径自带 /images、不带 /api 前缀，
+# 因为 Caddy 会把非 /api 的路径也转发过来，图片地址形如 https://域名/images/文件名
+app.include_router(images.router)
+app.include_router(
+    images.admin_router, prefix="/api/admin", dependencies=[Depends(require_admin)]
+)
+
+
+@app.middleware("http")
+async def no_sniff_images(request: Request, call_next):
+    """给图片响应加 nosniff 头。
+
+    上传的文件虽然后端会按文件头校验格式，但浏览器默认会对响应做 MIME 嗅探。
+    万一有人构造出「合法 JPEG 头 + HTML 正文」的混合文件，直接访问该 URL 时
+    浏览器可能把它当 HTML 执行。加上这个头就堵死了这条路，也让静态文件的
+    content-type 完全以我们给的为准。
+    """
+    response = await call_next(request)
+    if request.url.path.startswith("/images/"):
+        response.headers["X-Content-Type-Options"] = "nosniff"
+    return response
 
 
 @app.get("/")

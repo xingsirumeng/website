@@ -29,6 +29,8 @@ const router = createRouter({
       path: '/admin',
       name: 'admin',
       component: () => import('@/views/AdminView.vue'),
+      // 后台是独立界面：不显示前台的导航栏，由 AdminView 自己画外壳
+      meta: { bare: true },
     },
   ],
 })

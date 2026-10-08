@@ -6,6 +6,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Integer,
+    LargeBinary,
     String,
     Table,
     Text,
@@ -58,3 +59,18 @@ class Post(Base):
     tags = relationship(
         "Tag", secondary=post_tags, back_populates="posts", lazy="selectin"
     )
+
+
+class Image(Base):
+    """文章配图，内容直接存在库里 —— 备份 = 复制 app.db 一个文件"""
+
+    __tablename__ = "images"
+
+    id = Column(Integer, primary_key=True, index=True)
+    # 文件名（uuid.ext），同时也是 URL 里那一段，所以唯一。
+    # 用文件名而不是 id 当 URL 主键，是为了历史文件（sample1.jpg）导入后地址保持不变。
+    name = Column(String, nullable=False, unique=True, index=True)
+    mime = Column(String, nullable=False)
+    size = Column(Integer, nullable=False)
+    data = Column(LargeBinary, nullable=False)
+    created_at = Column(DateTime, default=now_cst)

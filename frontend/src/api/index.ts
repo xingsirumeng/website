@@ -2,10 +2,13 @@ import axios from 'axios'
 
 export const TOKEN_KEY = 'blog_token'
 
+// 本地开发留空，交给 vite.config.ts 里的 /api 代理打到 localhost:8000；
+// 生产构建（GitHub Pages 上没有代理）必须用服务器绝对地址。
+// 单独导出是因为 Vditor 的内置上传走原生 XHR，拿不到 axios 的 baseURL，得自己拼完整地址。
+export const API_BASE = import.meta.env.DEV ? '' : 'https://139.196.32.236.nip.io'
+
 const api = axios.create({
-  // 本地开发留空，交给 vite.config.ts 里的 /api 代理打到 localhost:8000；
-  // 生产构建（GitHub Pages 上没有代理）必须用服务器绝对地址。
-  baseURL: import.meta.env.DEV ? '' : 'https://139.196.32.236.nip.io',
+  baseURL: API_BASE,
   timeout: 10000,
 })
 

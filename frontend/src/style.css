@@ -1,12 +1,21 @@
-/* 全局基础样式：只做重置和站点级配色，页面样式一律写在组件的 <style scoped> 里 */
+/* 全局基础样式：只做重置、站点级配色和正文排版。
+   页面自己的样式一律写在组件的 <style scoped> 里 */
 :root {
   --brand: #42b883;
+  --brand-soft: rgba(66, 184, 131, 0.12);
   --dark: #1a1a2e;
+
   --text: #333;
-  --text-light: #666;
-  --danger: #e74c3c;
+  --text-muted: #6b6b6b; /* 次要文字。#999 在白底上对比度只有 2.8:1，达不到 WCAG AA 的 4.5:1 */
   --bg: #f7f7f9;
+  --card: #fff;
   --border: #e5e4e7;
+  --danger: #e74c3c;
+
+  /* 阅读版心。中文字等宽，17px 下一个字占 17px，
+     720px 约合每行 40 字 —— 中文舒服的区间是 30~40 字。
+     原先正文跟着 main 的 1000px 走，每行 60+ 字，是读起来累的主要原因。 */
+  --reading-width: 720px;
 
   /* 本项目不做暗色模式，锁死浅色。
      否则系统开暗色主题时，写死白底的卡片会和暗色文字撞在一起，内容看不见 */
@@ -19,7 +28,9 @@
 
 body {
   margin: 0;
-  font-family: system-ui, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+  /* 补上苹方和冬青黑，Mac / iOS 上的中文渲染比雅黑好看很多 */
+  font-family: system-ui, -apple-system, 'Segoe UI', 'PingFang SC',
+    'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
   font-size: 16px;
   line-height: 1.7;
   color: var(--text);
@@ -31,43 +42,151 @@ a {
   color: var(--brand);
 }
 
-/* Markdown 正文的排版。
+/* @vicons 的图标组件只输出一个裸 <svg viewBox>，不带 width/height，fill 也默认是黑色。
+   所以统一用这个类：跟着字号缩放、跟随文字颜色、和文字基线对齐。
+   前台页面直接用它，而不引 <n-icon> —— 那会把整个 Naive UI 拖进读者的 bundle。 */
+.svg-icon {
+  width: 1.12em;
+  height: 1.12em;
+  fill: currentColor;
+  vertical-align: -0.15em;
+  flex-shrink: 0;
+}
+
+.svg-icon.spin {
+  animation: svg-spin 1s linear infinite;
+}
+
+/* 各页面的「加载中」占位提示，统一样式 */
+.loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+}
+
+@keyframes svg-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---------- Markdown 正文排版 ----------
    正文是用 v-html 插进去的，那部分 DOM 不受组件 <style scoped> 影响，样式只能写在这里 */
+
 .markdown-body {
-  line-height: 1.8;
+  font-size: 17px;   /* 比界面字号大一号：中文笔画密，正文字小了很费眼 */
+  line-height: 1.9;  /* 中文没有词间空格，行距要比西文更松才不挤 */
+  color: var(--text);
   overflow-wrap: break-word;
 }
+
+.markdown-body p {
+  margin: 0 0 1.4em;
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4 {
+  line-height: 1.4;
+  color: #1f1f1f;
+}
+
+.markdown-body h2 {
+  font-size: 1.35em;
+  margin: 2em 0 0.8em;
+  padding-bottom: 0.35em;
+  border-bottom: 1px solid var(--border);
+}
+
+.markdown-body h3 {
+  font-size: 1.15em;
+  margin: 1.7em 0 0.6em;
+}
+
+.markdown-body h4 {
+  font-size: 1em;
+  margin: 1.4em 0 0.5em;
+}
+
+.markdown-body ul,
+.markdown-body ol {
+  margin: 0 0 1.4em;
+  padding-left: 1.6em;
+}
+
+.markdown-body li {
+  margin: 0.3em 0;
+}
+
+.markdown-body li > p {
+  margin: 0;
+}
+
 .markdown-body img {
   max-width: 100%;
+  border-radius: 6px;
 }
+
+.markdown-body a {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.markdown-body hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 2.4em 0;
+}
+
 .markdown-body pre {
   background: #f4f4f6;
-  padding: 12px 16px;
-  border-radius: 6px;
+  border: 1px solid var(--border);
+  padding: 14px 18px;
+  border-radius: 8px;
   overflow-x: auto;
+  line-height: 1.6;
+  font-size: 0.88em;
 }
+
 .markdown-body code {
-  font-family: ui-monospace, Consolas, monospace;
-  font-size: 0.9em;
+  font-family: ui-monospace, 'SF Mono', Consolas, 'Cascadia Code', monospace;
 }
+
 .markdown-body :not(pre) > code {
-  background: #f4f4f6;
+  background: var(--brand-soft);
+  color: #2f8f66;
   padding: 2px 6px;
   border-radius: 4px;
+  font-size: 0.88em;
 }
+
 .markdown-body blockquote {
-  margin: 0;
-  padding-left: 14px;
+  margin: 0 0 1.4em;
+  padding: 2px 0 2px 16px;
   border-left: 3px solid var(--brand);
-  color: var(--text-light);
+  color: var(--text-muted);
 }
+
+.markdown-body blockquote > :last-child {
+  margin-bottom: 0;
+}
+
 .markdown-body table {
   border-collapse: collapse;
   width: 100%;
+  margin: 0 0 1.4em;
+  font-size: 0.94em;
 }
+
 .markdown-body th,
 .markdown-body td {
   border: 1px solid var(--border);
-  padding: 6px 12px;
+  padding: 8px 14px;
   text-align: left;
+}
+
+.markdown-body th {
+  background: #fafafa;
 }

@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { marked } from 'marked'
+import { SyncOutline } from '@vicons/ionicons5'
+import { marked } from '@/utils/markdown'
 import api from '@/api'
 import { formatDate } from '@/utils/format'
 import type { PostDetail } from '@/types'
@@ -31,7 +32,10 @@ onMounted(async () => {
 
 <template>
   <div class="post">
-    <div v-if="loading">⏳ 加载中...</div>
+    <div v-if="loading" class="loading">
+      <SyncOutline class="svg-icon spin" />
+      加载中...
+    </div>
     <div v-else-if="error" class="error">{{ error }}</div>
 
     <article v-else-if="post">
@@ -63,42 +67,51 @@ onMounted(async () => {
 
 <style scoped>
 .post {
-  padding: 20px 0;
+  /* 版心收窄。列表页可以宽，但读文章时一行 60 多个字很累 ——
+     这是这次排版调整里读者感知最强的一项 */
+  max-width: var(--reading-width);
+  margin: 0 auto;
+  padding: 24px 0 72px;
 }
 h1 {
-  font-size: 1.8rem;
-  margin: 0 0 8px;
+  font-size: 1.7rem;
+  line-height: 1.4;
+  margin: 0 0 10px;
 }
 .meta {
-  color: #999;
+  color: var(--text-muted);
   font-size: 0.85rem;
-  margin: 0 0 28px;
+  margin: 0 0 34px;
 }
 .tags {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 32px;
+  margin-top: 44px;
   padding-top: 20px;
-  border-top: 1px solid #e5e4e7;
+  border-top: 1px solid var(--border);
 }
 .tag {
-  background: rgba(66, 184, 131, 0.12);
-  color: #42b883;
+  background: var(--brand-soft);
+  color: var(--brand);
   font-size: 0.8rem;
   padding: 3px 12px;
   border-radius: 20px;
   text-decoration: none;
+  transition: background 0.2s;
 }
 .tag:hover {
   background: rgba(66, 184, 131, 0.24);
 }
 .back {
   display: inline-block;
-  margin-top: 24px;
+  margin-top: 28px;
   text-decoration: none;
 }
+.back:hover {
+  text-decoration: underline;
+}
 .error {
-  color: #e74c3c;
+  color: var(--danger);
 }
 </style>

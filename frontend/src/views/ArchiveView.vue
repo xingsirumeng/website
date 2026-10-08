@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { CalendarOutline, SyncOutline } from '@vicons/ionicons5'
 import api from '@/api'
 import { formatDate, formatMonth } from '@/utils/format'
 import type { PostSummary } from '@/types'
@@ -38,9 +39,15 @@ onMounted(async () => {
 
 <template>
   <div class="archive">
-    <h1>📅 归档</h1>
+    <h1>
+      <CalendarOutline class="svg-icon" />
+      归档
+    </h1>
 
-    <div v-if="loading">⏳ 加载中...</div>
+    <div v-if="loading" class="loading">
+      <SyncOutline class="svg-icon spin" />
+      加载中...
+    </div>
     <div v-else-if="error" class="error">{{ error }}</div>
     <div v-else-if="groups.length === 0" class="empty">还没有文章</div>
 
@@ -61,24 +68,24 @@ onMounted(async () => {
 
 <style scoped>
 .archive {
-  padding: 20px 0;
+  padding: 28px 0 64px;
 }
 h1 {
-  font-size: 1.6rem;
+  font-size: 1.5rem;
   margin: 0 0 8px;
 }
 .total {
-  color: #999;
+  color: var(--text-muted);
   font-size: 0.9rem;
-  margin: 0 0 24px;
+  margin: 0 0 26px;
 }
 .timeline {
-  border-left: 2px solid #e5e4e7;
-  padding-left: 24px;
+  border-left: 2px solid var(--border);
+  padding-left: 26px;
 }
 .month h2 {
   font-size: 1.05rem;
-  color: #42b883;
+  color: var(--brand);
   margin: 0 0 10px;
 }
 .month + .month h2 {
@@ -96,7 +103,7 @@ h1 {
   padding: 6px 0;
 }
 .date {
-  color: #999;
+  color: var(--text-muted);
   font-size: 0.85rem;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -108,9 +115,9 @@ h1 {
   text-decoration: underline;
 }
 .empty {
-  color: #666;
+  color: var(--text-muted);
 }
 .error {
-  color: #e74c3c;
+  color: var(--danger);
 }
 </style>
