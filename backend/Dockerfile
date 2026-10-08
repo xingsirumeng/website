@@ -5,15 +5,17 @@ FROM python:3.13-slim
 
 WORKDIR /app
 
-# 换成清华 Debian 镜像源（国内加速）
-RUN sed -i 's|deb.debian.org|mirrors.tuna.tsinghua.edu.cn|g' /etc/apt/sources.list.d/debian.sources \
+# 换成阿里云 Debian 镜像源
+# 用阿里云而不是清华源：这台服务器就在阿里云上，走内网、不计公网流量、也不受公网波动影响。
+# （曾经用清华源，出现过宿主机能访问、构建时却拿不到任何包的情况）
+RUN sed -i 's|deb.debian.org|mirrors.aliyun.com|g' /etc/apt/sources.list.d/debian.sources \
     && apt-get update \
     && apt-get install -y --no-install-recommends gcc \
     && rm -rf /var/lib/apt/lists/*
 
-# pip 也走清华源
+# pip 同样走阿里云源
 COPY requirements.txt .
-RUN pip install --no-cache-dir -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
+RUN pip install --no-cache-dir -i https://mirrors.aliyun.com/pypi/simple/ -r requirements.txt
 
 COPY . .
 

@@ -1,7 +1,15 @@
-fastapi>=0.115.0
-uvicorn[standard]>=0.30.0
-sqlalchemy>=2.0.35
-pydantic>=2.9.0
-python-dotenv>=1.0.1
-pyjwt>=2.9.0
-python-multipart>=0.0.9
+# 全部锁死版本，不用 >= 或 ^。
+#
+# 原因：Dockerfile 里 `COPY requirements.txt .` 这一层只在文件变化时才重建，
+# 用范围版本号就意味着「每次重建都可能装上这期间发布的所有新版本」——
+# 上游一个不兼容的新版就能让构建突然失败，而且极难排查。
+# 锁死后每次构建装的东西完全一样，出问题也能确定不是依赖变动引起的。
+#
+# 升级方式：改版本号 → 本地跑一遍 → 构建通过再提交。
+fastapi==0.136.3
+uvicorn[standard]==0.49.0
+sqlalchemy==2.0.50
+pydantic==2.13.4
+python-dotenv==1.2.2
+pyjwt==2.14.0
+python-multipart==0.0.32
