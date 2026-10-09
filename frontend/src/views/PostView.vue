@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { SyncOutline } from '@vicons/ionicons5'
+import { ArrowBackOutline, SyncOutline } from '@vicons/ionicons5'
 import { marked } from '@/utils/markdown'
 import api from '@/api'
 import { formatDate } from '@/utils/format'
@@ -60,7 +60,10 @@ onMounted(async () => {
         </router-link>
       </div>
 
-      <router-link to="/" class="back">← 返回列表</router-link>
+      <router-link to="/" class="back-btn">
+        <ArrowBackOutline class="svg-icon" />
+        返回主页
+      </router-link>
     </article>
   </div>
 </template>
@@ -103,13 +106,28 @@ h1 {
 .tag:hover {
   background: rgba(66, 184, 131, 0.24);
 }
-.back {
-  display: inline-block;
-  margin-top: 28px;
+/* 按钮样式的返回入口。
+   用 router-link 而不是 <button>：这本质上是一次导航，
+   标签保持 <a> 才有「中键在新标签页打开」「右键复制链接」这些能力，
+   屏幕阅读器也会正确念成链接。外观上它看起来就是颗按钮。 */
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 34px;
+  padding: 8px 20px;
+  font-size: 0.9rem;
+  color: var(--text);
   text-decoration: none;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
 }
-.back:hover {
-  text-decoration: underline;
+.back-btn:hover {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
 }
 .error {
   color: var(--danger);

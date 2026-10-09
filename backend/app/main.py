@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.auth import require_admin
 from app.database import engine, Base
-from app.routes import images, posts
+from app.routes import images, posts, projects, todos
 from app.routes.images import import_legacy_images
 
 
@@ -42,6 +42,17 @@ app.include_router(
 app.include_router(images.router)
 app.include_router(
     images.admin_router, prefix="/api/admin", dependencies=[Depends(require_admin)]
+)
+
+# 待办清单，全部是管理接口
+app.include_router(
+    todos.router, prefix="/api/admin/todos", dependencies=[Depends(require_admin)]
+)
+
+# 作品集：前台只读，后台增删改
+app.include_router(projects.router, prefix="/api")
+app.include_router(
+    projects.admin_router, prefix="/api/admin", dependencies=[Depends(require_admin)]
 )
 
 

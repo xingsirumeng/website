@@ -61,6 +61,36 @@ class Post(Base):
     )
 
 
+class Project(Base):
+    """作品集里的一个项目"""
+
+    __tablename__ = "projects"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    description = Column(Text, default="")
+    # 技术栈用逗号分隔的字符串，不建关联表：
+    # 前端的标签能筛选，项目的技术栈只是展示用，没有按它查询的需求
+    tech = Column(String, default="")
+    demo_url = Column(String, default="")   # 在线演示
+    repo_url = Column(String, default="")   # 源码
+    cover = Column(String, default="")      # 封面图：本站相对路径或外链
+    sort = Column(Integer, default=0)       # 越大越靠前，用来手动排优先级
+    published = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=now_cst)
+
+
+class Todo(Base):
+    """管理员的待办清单。整站只有一个管理员，所以没有「属于谁」这个字段"""
+
+    __tablename__ = "todos"
+
+    id = Column(Integer, primary_key=True, index=True)
+    text = Column(String, nullable=False)
+    done = Column(Boolean, nullable=False, default=False)
+    created_at = Column(DateTime, default=now_cst)
+
+
 class Image(Base):
     """文章配图，内容直接存在库里 —— 备份 = 复制 app.db 一个文件"""
 

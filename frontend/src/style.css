@@ -2,24 +2,40 @@
    页面自己的样式一律写在组件的 <style scoped> 里 */
 :root {
   --brand: #42b883;
-  --brand-soft: rgba(66, 184, 131, 0.12);
-  --dark: #1a1a2e;
+  --brand-soft: rgba(66, 184, 131, 0.18);
+  --dark: #12131a;
 
-  --text: #333;
-  --text-muted: #6b6b6b; /* 次要文字。#999 在白底上对比度只有 2.8:1，达不到 WCAG AA 的 4.5:1 */
-  --bg: #f7f7f9;
-  --card: #fff;
-  --border: #e5e4e7;
-  --danger: #e74c3c;
+  /* ---------- 暗色调色板 ----------
+     这套是「暗色遮罩 + 亮色文字」。改成深色背景时必须整体翻转：
+     只改遮罩颜色的话，原本的深色文字会变成黑底黑字，全站看不见。 */
+  --text: #d6d7de; /* 正文 */
+  --text-strong: #f0f1f5; /* 标题，比正文亮一档拉出层次 */
+  --text-muted: #9b9caa; /* 次要文字。暗底上的对比度约 5.2:1，达到 WCAG AA */
+  --bg: #14151a; /* 背景图没加载出来时的兜底底色 */
+  --card: rgba(26, 28, 36, 0.88); /* 半透明，让壁纸透出来一点 */
+  --border: rgba(255, 255, 255, 0.12);
+  --danger: #ff7b72; /* 暗底上用亮一点的红，原来的 #e74c3c 会发闷 */
 
   /* 阅读版心。中文字等宽，17px 下一个字占 17px，
      720px 约合每行 40 字 —— 中文舒服的区间是 30~40 字。
      原先正文跟着 main 的 1000px 走，每行 60+ 字，是读起来累的主要原因。 */
   --reading-width: 720px;
 
-  /* 本项目不做暗色模式，锁死浅色。
-     否则系统开暗色主题时，写死白底的卡片会和暗色文字撞在一起，内容看不见 */
-  color-scheme: light;
+  /* 导航栏高度。抽成变量是因为首屏要减掉它算高度 ——
+     写死两个地方的话，改了 padding 就对不上了 */
+  --nav-height: 60px;
+
+  /* 全站背景图，由 App.vue 按当前时段（早上/傍晚/晚上）设置 */
+  --site-bg: none;
+
+  /* 背景图和内容之间的半透明遮罩。
+     这一层负责压暗照片，好让亮色文字读得清。
+     想让照片更醒目就调小（比如 0.45），想更暗更沉就调大（比如 0.8）。 */
+  --bg-scrim: rgba(8, 9, 13, 0.62);
+
+  /* 告诉浏览器本站是暗色的：滚动条、输入框、自动填充这些原生控件会跟着变暗，
+     否则它们还是白的，在暗色页面上很突兀 */
+  color-scheme: dark;
 }
 
 * {
@@ -34,8 +50,16 @@ body {
   font-size: 16px;
   line-height: 1.7;
   color: var(--text);
-  background: var(--bg);
   -webkit-font-smoothing: antialiased;
+
+  /* 背景分两层：上面是纯色半透明遮罩，下面是照片。
+     两层的尺寸/位置/定位参数必须一一对应，所以下面都是逗号分隔的两组值。 */
+  background-color: var(--bg); /* 照片没加载出来时的兜底底色 */
+  background-image: linear-gradient(var(--bg-scrim), var(--bg-scrim)), var(--site-bg);
+  background-size: cover, cover;
+  background-position: center, center;
+  background-attachment: fixed, fixed;
+  background-repeat: no-repeat, no-repeat;
 }
 
 a {
@@ -65,6 +89,44 @@ a {
   color: var(--text-muted);
 }
 
+/* ---------- 右下角的悬浮按钮 ----------
+   「回到顶部」在 App.vue、「写新文章」在 HomeView，分属两个组件。
+   scoped 样式是不共享的，放全局才能保证两者真的一模一样
+   （尺寸、圆角、配色、悬停效果全部一致，只有水平位置不同）。 */
+.float-btn {
+  position: fixed;
+  bottom: 28px;
+  z-index: 50;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  /* 深色半透明 —— 底是照片，纯色块会显得很突兀 */
+  background: rgba(26, 28, 36, 0.92);
+  color: var(--text);
+  cursor: pointer;
+  transition: opacity 0.2s, visibility 0.2s, background 0.2s, border-color 0.2s,
+    color 0.2s;
+}
+/* 需要按条件藏起来的那一个（回到顶部）加这个类 */
+.float-btn.faded {
+  opacity: 0;
+  visibility: hidden;
+}
+.float-btn:hover {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
+}
+.float-btn .svg-icon {
+  width: 1.35em;
+  height: 1.35em;
+}
+
 @keyframes svg-spin {
   to {
     transform: rotate(360deg);
@@ -90,7 +152,7 @@ a {
 .markdown-body h3,
 .markdown-body h4 {
   line-height: 1.4;
-  color: #1f1f1f;
+  color: var(--text-strong);
 }
 
 .markdown-body h2 {
@@ -141,7 +203,8 @@ a {
 }
 
 .markdown-body pre {
-  background: #f4f4f6;
+  /* 用半透明白提亮，而不是写死一个浅色 —— 这样它在任何底图上都成立 */
+  background: rgba(255, 255, 255, 0.06);
   border: 1px solid var(--border);
   padding: 14px 18px;
   border-radius: 8px;
@@ -156,7 +219,8 @@ a {
 
 .markdown-body :not(pre) > code {
   background: var(--brand-soft);
-  color: #2f8f66;
+  /* 暗底上要用亮绿色，原来那个偏深的绿会糊在背景里 */
+  color: #5fd3a0;
   padding: 2px 6px;
   border-radius: 4px;
   font-size: 0.88em;
@@ -188,5 +252,56 @@ a {
 }
 
 .markdown-body th {
-  background: #fafafa;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* ---------- 路由切换过渡 ----------
+   这两组类名是加在「被渲染出来的子组件根元素」上的。
+   所以必须放全局 —— 写在 App.vue 的 scoped 里会因为属性选择器匹配不到而失效。 */
+.page-enter-active,
+.page-leave-active {
+  transition: opacity 0.18s ease;
+}
+.page-enter-from,
+.page-leave-to {
+  opacity: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .page-enter-active,
+  .page-leave-active {
+    transition: none;
+  }
+}
+
+/* ---------- 滚动条 ----------
+   两套语法在 Chrome 里是互斥的：一旦写了标准属性（scrollbar-width /
+   scrollbar-color），::-webkit-scrollbar 那套就整个失效。
+   想精确指定宽度（标准属性只有 thin / auto 两档）只能走 WebKit，
+   所以标准属性放到下面 @supports 里，
+   只对不认 WebKit 伪元素的浏览器（主要是 Firefox）生效。 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+/* 滑块和槽同宽、直角，贴满整条轨道 */
+::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.25);
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.42);
+}
+/* 横竖两条滚动条交汇的直角，不处理会露出一小块底色 */
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Firefox：它不认 ::-webkit-scrollbar，给它一套等价的 */
+@supports not selector(::-webkit-scrollbar) {
+  html {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.25) rgba(255, 255, 255, 0.05);
+  }
 }

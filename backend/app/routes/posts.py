@@ -138,6 +138,16 @@ def list_tags(db: Session = Depends(get_db)):
 # ---------- 管理接口（已由 main.py 统一鉴权）----------
 
 
+@admin_router.get("/me")
+def admin_me():
+    """给前端确认「当前令牌还有效吗」。
+
+    挂在 admin_router 上，所以能返回 200 就说明令牌有效。
+    比拉整个文章列表轻得多 —— 前台每次加载都要确认一次身份，不该为此传几万字节。
+    """
+    return {"admin": True}
+
+
 @admin_router.get("/posts", response_model=list[PostResponse])
 def admin_list_posts(db: Session = Depends(get_db)):
     """后台列表：包含草稿"""

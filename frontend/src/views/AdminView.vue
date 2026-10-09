@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import {
   NButton,
   NCard,
@@ -11,42 +11,36 @@ import {
   NInput,
   NTag,
   createDiscreteApi,
-  type GlobalThemeOverrides,
+  darkTheme,
 } from 'naive-ui'
 import {
   CheckmarkCircleOutline,
   CreateOutline,
-  EyeOutline,
   KeyOutline,
-  LogOutOutline,
-  SettingsOutline,
   TrashOutline,
 } from '@vicons/ionicons5'
+import { useRoute, useRouter } from 'vue-router'
 import api, { TOKEN_KEY } from '@/api'
+import { useAdmin } from '@/composables/useAdmin'
+import AdminHeader from '@/components/AdminHeader.vue'
 import VditorEditor from '@/components/VditorEditor.vue'
+import { themeOverrides } from '@/theme'
 import { formatDate } from '@/utils/format'
 import { collapseImageUrls, expandImageUrls } from '@/utils/imagePath'
 import type { PostDetail, PostSummary } from '@/types'
-
-// 主题对齐站点品牌绿，否则 Naive UI 默认是蓝色的，跟前台对不上
-const themeOverrides: GlobalThemeOverrides = {
-  common: {
-    primaryColor: '#42b883',
-    primaryColorHover: '#4fd39a',
-    primaryColorPressed: '#369d6f',
-    primaryColorSuppl: '#4fd39a',
-    borderRadius: '6px',
-    fontFamily:
-      "system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif",
-  },
-}
 
 // 用 createDiscreteApi 而不是嵌 <n-message-provider>：
 // 省一层组件嵌套，也不用把 AdminView 拆成两个文件。
 // 主题同样传进去，否则弹出的提示是默认蓝色。
 const { message, dialog } = createDiscreteApi(['message', 'dialog'], {
-  configProviderProps: { themeOverrides },
+  // 弹窗和提示是独立挂载的，不在这棵组件树里，主题得单独传一份
+  configProviderProps: { theme: darkTheme, themeOverrides },
 })
+
+const route = useRoute()
+const router = useRouter()
+// 前台的「管理」「清单」入口依赖这份状态，登录/退出时要同步
+const { isAdmin, checkAdmin } = useAdmin()
 
 // 页面三种状态：登录 / 文章列表 / 编辑器
 const mode = ref<'login' | 'list' | 'edit'>('login')
@@ -64,6 +58,84 @@ const form = ref({ title: '', summary: '', tags: '', content: '', published: fal
 // 正文默认用可视化编辑器；Vditor 万一加载不出来，随时能切回纯文本接着写
 const plainMode = ref(false)
 
+/* ---------- 草稿自动保存 ----------
+   只写 localStorage，不碰服务器。自动往服务器存会和「你主动存的草稿」
+   混在一起，分不清哪些是真正想留下的。 */
+const DRAFT_KEY = 'blog_draft'
+const draftSavedAt = ref('')
+let draftTimer: number | undefined
+
+function persistDraft() {
+  if (mode.value !== 'edit') return
+  try {
+    localStorage.setItem(
+      DRAFT_KEY,
+      JSON.stringify({
+        editingId: editingId.value,
+        form: form.value,
+        savedAt: Date.now(),
+      }),
+    )
+    draftSavedAt.value = new Date().toLocaleTimeString('zh-CN', {
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+  } catch {
+    // 隐私模式或存储配额满。自动保存失败不该打断写作，静默跳过
+  }
+}
+
+function clearDraft() {
+  window.clearTimeout(draftTimer)
+  localStorage.removeItem(DRAFT_KEY)
+  draftSavedAt.value = ''
+}
+
+// 停止输入 1.5 秒后落盘。不用定时轮询 —— 那样没有任何改动也会一直写
+watch(
+  form,
+  () => {
+    if (mode.value !== 'edit') return
+    window.clearTimeout(draftTimer)
+    draftTimer = window.setTimeout(persistDraft, 1500)
+  },
+  { deep: true },
+)
+
+// 进入编辑器时问一次要不要恢复
+function offerDraftRestore() {
+  const raw = localStorage.getItem(DRAFT_KEY)
+  if (!raw) return
+
+  let saved: any
+  try {
+    saved = JSON.parse(raw)
+  } catch {
+    clearDraft() // 存坏了，直接丢掉
+    return
+  }
+
+  // 和当前表单内容一样就没必要问（比如刚保存完、或者本来就没改动）
+  const same =
+    saved?.form?.title === form.value.title && saved?.form?.content === form.value.content
+  if (same) {
+    clearDraft()
+    return
+  }
+
+  dialog.warning({
+    title: '恢复未保存的草稿？',
+    content: `检测到 ${new Date(saved.savedAt).toLocaleString('zh-CN')} 自动保存的内容`,
+    positiveText: '恢复',
+    negativeText: '丢弃',
+    onPositiveClick: () => {
+      form.value = { ...saved.form }
+      editingId.value = saved.editingId ?? null
+    },
+    onNegativeClick: clearDraft,
+  })
+}
+
 // 标签在界面上是一个输入框，中英文逗号都支持
 function splitTags(text: string): string[] {
   return text
@@ -80,6 +152,8 @@ async function login() {
       password: password.value,
     })
     localStorage.setItem(TOKEN_KEY, data.token)
+    // 强制重新确认：之前很可能是「没登录」的状态，现在登录了得同步给前台
+    await checkAdmin(true)
     password.value = ''
     await loadPosts()
   } catch (err: any) {
@@ -91,6 +165,8 @@ async function login() {
 
 function logout() {
   localStorage.removeItem(TOKEN_KEY)
+  // 退出后前台不该再显示管理入口
+  isAdmin.value = false
   posts.value = []
   error.value = ''
   mode.value = 'login'
@@ -130,6 +206,13 @@ function startCreate() {
   editingId.value = null
   form.value = { title: '', summary: '', tags: '', content: '', published: false }
   mode.value = 'edit'
+  offerDraftRestore()
+}
+
+// 主动点「取消」就是放弃改动，本地自动保存也一起丢掉
+function cancelEdit() {
+  clearDraft()
+  loadPosts()
 }
 
 // 列表接口不带正文，必须单独拉一次详情。
@@ -152,6 +235,7 @@ async function startEdit(post: PostSummary) {
       published: data.published,
     }
     mode.value = 'edit'
+    offerDraftRestore()
   } catch (err: any) {
     message.error('打开失败: ' + err.message)
   } finally {
@@ -181,6 +265,8 @@ async function save(published: boolean) {
     } else {
       await api.put(`/api/admin/posts/${editingId.value}`, payload)
     }
+    // 已经存成功了，本地那份自动保存就没用了
+    clearDraft()
     await loadPosts()
     message.success(published ? '已发布' : '已存为草稿')
   } catch (err: any) {
@@ -211,36 +297,34 @@ function remove(post: PostSummary) {
   })
 }
 
-onMounted(() => {
+onMounted(async () => {
   // 带着令牌进页面就直接拉列表；令牌过期会在 loadPosts 里回落到登录界面
-  if (localStorage.getItem(TOKEN_KEY)) {
-    loadPosts()
+  if (!localStorage.getItem(TOKEN_KEY)) return
+
+  await loadPosts()
+  // 没进到列表状态说明令牌失效了、落回了登录界面，深链就不用管了
+  if (mode.value !== 'list') return
+
+  // 首页那两个入口靠 query 参数直接落到对应界面，省掉「进后台再找文章」
+  const editId = route.query.edit
+  const isNew = route.query.new
+
+  if (typeof editId === 'string') {
+    const post = posts.value.find((p) => p.id === Number(editId))
+    if (post) await startEdit(post)
+  } else if (isNew === '1') {
+    startCreate()
   }
+
+  // 参数用完就清掉，否则刷新页面会莫名其妙又打开一次编辑器
+  if (editId || isNew) router.replace({ path: '/admin' })
 })
 </script>
 
 <template>
-  <NConfigProvider :theme-overrides="themeOverrides">
+  <NConfigProvider :theme="darkTheme" :theme-overrides="themeOverrides">
     <div class="admin-shell">
-      <!-- 后台自己的顶栏，替代前台那条「首页/标签/归档」 -->
-      <header class="admin-header">
-        <span class="brand">
-          <NIcon :component="SettingsOutline" />
-          后台管理
-        </span>
-        <div class="header-actions">
-          <router-link to="/" class="site-link">
-            <NIcon :component="EyeOutline" />
-            查看博客
-          </router-link>
-          <NButton v-if="mode !== 'login'" size="small" quaternary @click="logout">
-            <template #icon>
-              <NIcon :component="LogOutOutline" />
-            </template>
-            退出
-          </NButton>
-        </div>
-      </header>
+      <AdminHeader :logged-in="mode !== 'login'" @logout="logout" />
 
       <!-- 登录 -->
       <div v-if="mode === 'login'" class="login">
@@ -382,8 +466,12 @@ onMounted(() => {
             {{ form.published ? '更新并发布' : '发布' }}
           </NButton>
           <NButton :loading="loading" @click="save(false)">存草稿</NButton>
-          <NButton quaternary @click="loadPosts">取消</NButton>
+          <NButton quaternary @click="cancelEdit">取消</NButton>
         </div>
+
+        <p v-if="draftSavedAt" class="draft-hint">
+          草稿已自动保存到本地 · {{ draftSavedAt }}
+        </p>
       </div>
     </div>
   </NConfigProvider>
@@ -393,59 +481,6 @@ onMounted(() => {
 .admin-shell {
   min-height: 100vh;
   background: var(--bg);
-}
-
-/* 通栏深色顶栏，和前台导航同一个色系，但内容是后台自己的 */
-.admin-header {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 12px 24px;
-  background: var(--dark);
-  color: #fff;
-  box-shadow: 0 1px 10px rgba(0, 0, 0, 0.15);
-}
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 1rem;
-  letter-spacing: 0.5px;
-}
-.admin-header :deep(.n-icon) {
-  vertical-align: -0.18em;
-}
-/* 品牌图标用品牌绿，其余顶栏图标跟随文字色 */
-.brand :deep(.n-icon) {
-  color: var(--brand);
-}
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-.site-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  color: rgba(255, 255, 255, 0.82);
-  font-size: 0.9rem;
-  text-decoration: none;
-  transition: color 0.2s;
-}
-.site-link:hover {
-  color: #fff;
-}
-/* 顶栏里的 NButton 默认是深灰字，在深色底上看不清，得改浅 */
-.admin-header :deep(.n-button) {
-  color: rgba(255, 255, 255, 0.82);
-}
-.admin-header :deep(.n-button:hover) {
-  color: #fff;
 }
 
 /* 内容区居中限宽。
@@ -559,5 +594,11 @@ h1 {
   display: flex;
   gap: 10px;
   margin-top: 24px;
+}
+/* 自动保存的提示。做得不显眼 —— 它是用来让人安心的，不是抢注意力的 */
+.draft-hint {
+  margin: 12px 0 0;
+  font-size: 0.82rem;
+  color: var(--text-muted);
 }
 </style>

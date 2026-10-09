@@ -20,3 +20,26 @@ export interface TagCount {
   name: string
   count: number
 }
+
+export interface Project {
+  id: number
+  name: string
+  description: string
+  /** 技术栈，逗号分隔的字符串（后端不拆成数组，前端展示时再分） */
+  tech: string
+  demo_url: string
+  repo_url: string
+  /** 封面：本站 /images/ 下的相对地址，或外链 */
+  cover: string
+  /** 排序权重，越大越靠前 */
+  sort: number
+  published: boolean
+  created_at: string
+}
+
+export interface Todo {
+  id: number
+  text: string
+  done: boolean
+  created_at: string
+}
