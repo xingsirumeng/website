@@ -86,11 +86,16 @@ onBeforeUnmount(() => {
     @animationend="onJumpEnd"
   >
     <svg class="pet-svg" viewBox="0 0 64 64">
-      <!-- 耳朵（画在头后面，所以先写） -->
-      <path class="fur" d="M15 26 L11 5 L29 18 Z" />
-      <path class="fur" d="M49 26 L53 5 L35 18 Z" />
-      <path class="inner-ear" d="M17 23 L15 11 L25 19 Z" />
-      <path class="inner-ear" d="M47 23 L49 11 L39 19 Z" />
+      <!-- 耳朵（画在头后面，所以先写）。
+           顶点不是尖的，而是用 Q 曲线倒了个大圆角 ——
+           曲线经过原来那个尖点附近，于是三角形变成了圆润的水滴形。
+           比"同色描边 + linejoin: round"可靠：圆角大小由路径决定，
+           不会因为描边把整只耳朵撑胖。
+           底部两个角藏在头后面，所以不用管 -->
+      <path class="fur" d="M14.43 16.45 Q12.5 6 21.03 13.15 L28 19 L16 25 Z" />
+      <path class="fur" d="M49.57 16.45 Q51.5 6 42.97 13.15 L36 19 L48 25 Z" />
+      <path class="inner-ear" d="M16.6 17.05 Q15.5 11 21.28 14.85 L26 18 L17.5 22 Z" />
+      <path class="inner-ear" d="M47.4 17.05 Q48.5 11 42.72 14.85 L38 18 L46.5 22 Z" />
 
       <!-- 头 -->
       <ellipse class="fur" cx="32" cy="37" rx="22" ry="20" />

@@ -28,8 +28,10 @@ const { isAdmin, checkAdmin } = useAdmin()
 const todoOpen = ref(false)
 // 清单面板懒加载：普通访客永远不下载它，管理员不点开也不下载
 const TodoPanel = defineAsyncComponent(() => import('@/components/TodoPanel.vue'))
-// 桌宠是纯装饰，同样懒加载 —— 谁也不该为了角落里一个小挂件等首屏
-const PagePet = defineAsyncComponent(() => import('@/components/PagePet.vue'))
+// Live2D 看板娘（只在首页、只在桌面端、空闲后加载，判断都在组件里）
+const Live2dWidget = defineAsyncComponent(
+  () => import('@/components/Live2dWidget.vue'),
+)
 // 带 bare 标记的路由（目前只有后台）自己管布局，不要前台这层壳
 const bare = computed(() => route.meta.bare === true)
 
@@ -124,8 +126,8 @@ watch(bare, applyWallpaper)
       <ArrowUpOutline class="svg-icon" />
     </button>
 
-    <!-- 角落里的桌宠。同样不显示在后台 —— 那是干活的地方 -->
-    <PagePet v-if="!bare" />
+    <!-- Live2D 看板娘。它自己会往 body 里插 DOM，所以这里只是挂个逻辑组件 -->
+    <Live2dWidget v-if="!bare" />
     <main :class="{ 'main-bare': bare }">
       <!-- mode="out-in"：旧页面先淡出，新页面再淡入。
            不加的话两个页面会同时存在，高度叠加，滚动条会跳 -->

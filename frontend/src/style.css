@@ -255,6 +255,16 @@ a {
   background: rgba(255, 255, 255, 0.06);
 }
 
+/* ---------- Live2D 看板娘 ----------
+   它的 DOM 是 CDN 脚本自己往 body 里插的，作用域样式够不着，只能放全局。
+   非首页时由 Live2dWidget 给 <html> 加 .hide-live2d 把它藏起来 ——
+   SPA 切路由不会重新加载页面，不藏的话它会一直挂在那儿。
+   !important 是因为它自己的样式表里也设了 display。 */
+.hide-live2d #waifu,
+.hide-live2d #waifu-toggle {
+  display: none !important;
+}
+
 /* ---------- 路由切换过渡 ----------
    这两组类名是加在「被渲染出来的子组件根元素」上的。
    所以必须放全局 —— 写在 App.vue 的 scoped 里会因为属性选择器匹配不到而失效。 */
